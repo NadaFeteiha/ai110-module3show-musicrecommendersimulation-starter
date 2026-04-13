@@ -25,19 +25,47 @@ def main() -> None:
         "target_tempo_bpm": 120.0,
     }
 
-    recommendations = recommend_songs(user_prefs, songs, k=5)
+    # Profile 1: High-Energy Pop Fan
+    pop_fan = {
+        "favorite_genre": "pop",
+        "favorite_mood": "happy",
+        "target_energy": 0.9,
+        "target_valence": 0.85,
+        "target_tempo_bpm": 128.0
+    }
 
-    print(f"\nTop {len(recommendations)} recommendations for a "
-          f"{user_prefs['favorite_genre']} / {user_prefs['favorite_mood']} listener:\n")
+    # Profile 2: Chill Lofi Listener
+    lofi_listener = {
+        "favorite_genre": "lofi",
+        "favorite_mood": "chill",
+        "target_energy": 0.25,
+        "target_valence": 0.4,
+        "target_tempo_bpm": 75.0
+    }
 
-    for rank, (song, score, reasons) in enumerate(recommendations, start=1):
+    # Profile 3: Deep Intense Rock Fan
+    rock_fan = {
+        "favorite_genre": "metal",
+        "favorite_mood": "aggressive",
+        "target_energy": 0.95,
+        "target_valence": 0.2,
+        "target_tempo_bpm": 160.0
+    }
+
+    for profile in [user_prefs, pop_fan, lofi_listener, rock_fan]:
+        recommendations = recommend_songs(profile, songs, k=5)
+
+        print(f"\nTop {len(recommendations)} recommendations for a "
+              f"{profile['favorite_genre']} / {profile['favorite_mood']} listener:\n")
+
+        for rank, (song, score, reasons) in enumerate(recommendations, start=1):
+            print(DIVIDER)
+            print(f"#{rank}  {song['title']} — {song['artist']}")
+            print(f"    Score: {score:.2f}")
+            for reason in reasons:
+                print(f"    • {reason}")
+
         print(DIVIDER)
-        print(f"#{rank}  {song['title']} — {song['artist']}")
-        print(f"    Score: {score:.2f}")
-        for reason in reasons:
-            print(f"    • {reason}")
-
-    print(DIVIDER)
 
 
 if __name__ == "__main__":

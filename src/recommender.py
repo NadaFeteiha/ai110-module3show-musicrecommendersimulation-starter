@@ -44,54 +44,60 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     reasons = []
 
-    # --- genre: binary match, weight 0.35 ---
+    # EXPERIMENT: mood removed
+    # genre=0.325, mood=0.0 (disabled), energy=0.50, valence=0.12, tempo=0.055  (sum=1.0)
+    # mood's 0.25 redistributed: +0.15 to genre (0.175→0.325), +0.10 to energy (0.40→0.50)
+    # To restore: uncomment mood block, revert genre to 0.175, energy to 0.40, update weighted sum.
+
+    # --- genre: binary match, weight 0.325 ---
     if song["genre"] == user_prefs["favorite_genre"]:
         s_genre = 1.0
-        reasons.append(f"genre match: {song['genre']} (+{0.35 * s_genre:.2f})")
+        reasons.append(f"genre match: {song['genre']} (+{0.325 * s_genre:.3f})")
     else:
         s_genre = 0.0
         reasons.append(
-            f"genre mismatch: {song['genre']} vs {user_prefs['favorite_genre']} (+0.00)"
+            f"genre mismatch: {song['genre']} vs {user_prefs['favorite_genre']} (+0.000)"
         )
 
-    # --- mood: binary match, weight 0.25 ---
-    if song["mood"] == user_prefs["favorite_mood"]:
-        s_mood = 1.0
-        reasons.append(f"mood match: {song['mood']} (+{0.25 * s_mood:.2f})")
-    else:
-        s_mood = 0.0
-        reasons.append(
-            f"mood mismatch: {song['mood']} vs {user_prefs['favorite_mood']} (+0.00)"
-        )
+    # --- mood: binary match, weight 0.25 --- EXPERIMENT: disabled, contributes 0.0
+    # if song["mood"] == user_prefs["favorite_mood"]:
+    #     s_mood = 1.0
+    #     reasons.append(f"mood match: {song['mood']} (+{0.25 * s_mood:.3f})")
+    # else:
+    #     s_mood = 0.0
+    #     reasons.append(
+    #         f"mood mismatch: {song['mood']} vs {user_prefs['favorite_mood']} (+0.000)"
+    #     )
+    s_mood = 0.0
 
-    # --- energy: proximity, weight 0.20 ---
+    # --- energy: proximity, weight 0.50 ---
     s_energy = 1.0 - abs(song["energy"] - user_prefs["target_energy"]) / 1.0
     reasons.append(
         f"energy proximity: {song['energy']:.2f} vs {user_prefs['target_energy']:.2f}"
-        f" (+{0.20 * s_energy:.2f})"
+        f" (+{0.50 * s_energy:.3f})"
     )
 
     # --- valence: proximity, weight 0.12 ---
     s_valence = 1.0 - abs(song["valence"] - user_prefs["target_valence"]) / 1.0
     reasons.append(
         f"valence proximity: {song['valence']:.2f} vs {user_prefs['target_valence']:.2f}"
-        f" (+{0.12 * s_valence:.2f})"
+        f" (+{0.12 * s_valence:.3f})"
     )
 
-    # --- tempo: proximity, weight 0.08 ---
+    # --- tempo: proximity, weight 0.055 ---
     s_tempo = 1.0 - abs(song["tempo_bpm"] - user_prefs["target_tempo_bpm"]) / 120.0
     reasons.append(
         f"tempo proximity: {song['tempo_bpm']:.1f} vs {user_prefs['target_tempo_bpm']:.1f} BPM"
-        f" (+{0.08 * s_tempo:.2f})"
+        f" (+{0.055 * s_tempo:.3f})"
     )
 
-    # --- weighted sum ---
+    # --- weighted sum: 0.325 + 0.0 + 0.50 + 0.12 + 0.055 = 1.0 ---
     score = (
-        0.35 * s_genre +
-        0.25 * s_mood  +
-        0.20 * s_energy +
-        0.12 * s_valence +
-        0.08 * s_tempo
+        0.325 * s_genre +
+        0.0   * s_mood  +
+        0.50  * s_energy +
+        0.12  * s_valence +
+        0.055 * s_tempo
     )
     return score, reasons
 
@@ -164,15 +170,6 @@ class Recommender:
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Reads a CSV catalog and returns a list of song dicts with numeric fields cast to float.
-
-def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """
-    Scores a single song against user preferences.
-    Required by recommend_songs() and src/main.py
-    """
-    # TODO: Implement scoring logic using your Algorithm Recipe from Phase 2.
-    # Expected return format: (score, reasons)
-    return []
 
     Required by src/main.py
     """
@@ -266,4 +263,45 @@ PROFILE_STRESS_TEST = UserProfile(
     target_valence=0.15,
     target_tempo_bpm=162.0,
     likes_acoustic=True,
+)
+
+# Profile 1: High-Energy Pop Fan
+# Well-aligned preferences — genre/mood binary weights (0.60 combined) will
+# dominate, and the numerical targets are internally consistent (happy + high
+# valence + high energy + fast tempo all point the same direction).
+PROFILE_POP_FAN = UserProfile(
+    favorite_genre="pop",
+    favorite_mood="happy",
+    target_energy=0.9,
+    target_valence=0.85,
+    target_tempo_bpm=128.0,
+    likes_acoustic=False,
+)
+
+# Profile 2: Chill Lofi Listener
+# Low-energy, moderate valence, slow tempo.  "lofi" is a niche genre —
+# if the catalog has few lofi tracks, the 0.35 genre weight fires rarely
+# and the recommender degrades to near-purely numerical scoring, likely
+# surfacing acoustic or ambient songs that were never intended.
+PROFILE_LOFI_LISTENER = UserProfile(
+    favorite_genre="lofi",
+    favorite_mood="chill",
+    target_energy=0.25,
+    target_valence=0.4,
+    target_tempo_bpm=75.0,
+    likes_acoustic=True,
+)
+
+# Profile 3: Deep Intense Rock Fan
+# Contradictory genre label ("metal") with extreme numerical targets.
+# Similar to PROFILE_STRESS_TEST: if no metal songs exist, the 0.35
+# genre weight never fires and very high-energy, low-valence songs from
+# other genres (EDM, punk) will surface instead.
+PROFILE_ROCK_FAN = UserProfile(
+    favorite_genre="metal",
+    favorite_mood="aggressive",
+    target_energy=0.95,
+    target_valence=0.2,
+    target_tempo_bpm=160.0,
+    likes_acoustic=False,
 )

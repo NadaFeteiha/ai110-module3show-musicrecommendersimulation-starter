@@ -365,7 +365,63 @@ Examples:
 
 A few sentences about what you learned:
 
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
+Building this recommender changed how I think about AI systems in two big ways. 
+First, I learned that a model can look very confident even when its reasoning is 
+shallow. In my tests, a song like "Sunrise City" ranked first mostly because it 
+matched two binary labels, not because the system truly understood the listener's 
+taste. I also saw how fragile the rankings were: when I changed the weight for 
+mood, the top recommendation changed immediately. That showed me that recommender 
+outputs can depend heavily on small design choices.
 
+Second, I learned that data quality matters as much as the scoring formula. A song 
+tagged `"indie pop"` can be very close to `"pop"` for a real listener, but my 
+system treats them as completely different. That means the recommender is only as 
+fair and useful as the labels, categories, and examples it is built on. Real music 
+platforms probably spend a lot of effort on cleaner metadata, better genre mapping, 
+and more balanced catalogs, because even a simple ranking algorithm works much 
+better when the input data is strong.
+
+### Key Takeaways
+
+- The system can sound confident even when it is mostly following simple label matches.
+- Small weight changes can cause large ranking changes.
+- Binary genre and mood matching can hide good songs that are semantically similar.
+- Limited catalog diversity makes the recommender less fair for niche tastes.
+- Human judgment still matters when preferences are ambiguous or labels are too rigid.
+
+### Reflection Flow
+
+```text
+User Preference
+     |
+     v
+[Genre + Mood Labels]
+     |
+     +--> exact match -> large score boost
+     |
+     +--> near match but different label -> score drops
+     |
+     v
+[Energy + Valence + Tempo]
+     |
+     v
+[Final Weighted Score]
+     |
+     v
+Top Recommendation
+     |
+     +--> if labels are clean and catalog is balanced -> feels accurate
+     |
+     +--> if labels are narrow or user taste is unusual -> can look confident but be wrong
+```
+
+### Where Human Judgment Still Matters
+
+- A person can recognize that `"indie pop"` and `"pop"` are related, while my model cannot.
+- A person can question contradictory preferences like "high energy" and "sad mood" instead of averaging them.
+- A person can add context about sound, lyrics, culture, or intent that does not fit into a spreadsheet column.
+
+This project made recommender systems feel less mysterious to me. The basic idea is 
+simple: score items, rank them, and return the top results. What makes real systems 
+powerful is not just better math, but better data, better labeling, and better human 
+decisions around how the system should behave.
